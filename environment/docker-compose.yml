@@ -1,0 +1,62 @@
+version: '2'
+networks:
+    ssnet:
+       ipam:
+         config:
+         - subnet: 172.200.210.0/24
+services:
+  mesin1:
+    container_name: mesin-1
+    image: royyana/rm-jupyter-go:1.00
+    user: root
+    ports:
+      - "60001:8888"
+      - "20001:20000"
+    environment:
+      - "PASSWORD=mesin1"
+      - "DOCKER_STACKS_JUPYTER_CMD=lab"
+      - "GRANT_SUDO=yes"
+    volumes:
+      - ./workmesin1:/home/jovyan/work
+      - ./script:/script
+    entrypoint: "sh /script/entrypoint.sh"
+    #command: "sh /script/entrypoint.sh"
+    #entrypoint: "/bin/sh -c 'while true;do sleep 8888;done'"
+    networks:
+    - ssnet
+  mesin2:
+    container_name: mesin-2
+    image: royyana/rm-jupyter-go:1.00
+    user: root
+    ports:
+      - "60002:8888"
+      - "20002:20000"
+    environment:
+      - "PASSWORD=mesin2"
+      - "DOCKER_STACKS_JUPYTER_CMD=lab"
+      - "GRANT_SUDO=yes"
+    volumes:
+      - ./workmesin2:/home/jovyan/work
+      - ./script:/script
+    entrypoint: "sh /script/entrypoint.sh"
+    networks:
+    - ssnet
+  mesin3:
+    container_name: mesin-3
+    image: royyana/rm-jupyter-go:1.00
+    user: root
+    ports:
+      - "60003:8888"
+      - "20003:20000"
+    environment:
+      - "PASSWORD=mesin3"
+      - "DOCKER_STACKS_JUPYTER_CMD=lab"
+      - "GRANT_SUDO=yes"
+    volumes:
+      - ./workmesin3:/home/jovyan/work
+      - ./script:/script
+    entrypoint: "sh /script/entrypoint.sh"
+    networks:
+    - ssnet
+
+
