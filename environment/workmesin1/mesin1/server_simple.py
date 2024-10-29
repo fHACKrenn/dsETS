@@ -28,9 +28,7 @@ while True:
         break
 
     command = msg[0].decode("utf-8")
-    filename = None
-    if len(msg) > 1:
-        filename = msg[1].decode("utf-8")
+    filename = msg[1].decode("utf-8") if len(msg) > 1 else None
 
     if command == "list":
         files = [f for f in listdir(FILEPATH) if isfile(join(FILEPATH, f))]
@@ -46,3 +44,6 @@ while True:
         res = [HOSTNAME.encode("utf-8"), ERRN, "ERROR: Invalid command".encode("utf-8")]
 
     server.send_multipart(res)
+
+# Clean up context (this line will not be reached in a while True loop)
+context.term()
