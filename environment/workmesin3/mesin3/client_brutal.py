@@ -105,7 +105,7 @@ def main():
     while True:
         print("\nAvailable commands:")
         print("1. list  -> List available files")
-        print("2. download <file_name> -> Download a file")
+        print("2. download -> Download a file")
         print("3. exit  -> Exit the client")
 
         command = input("\nEnter command: ").strip().lower()
