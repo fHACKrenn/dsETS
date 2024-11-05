@@ -23,22 +23,52 @@ class FLClient(object):
     def request(self, *request):
         self.sequence += 1
         msg = [b'', str(self.sequence).encode()] + [r.encode() for r in request]
-        replies = []
 
-        for server in range(self.servers):
-            self.socket.send_multipart(msg)
+        # Send the request
+        self.socket.send_multipart(msg)
 
+        # Poll for a reply
         poll = zmq.Poller()
         poll.register(self.socket, zmq.POLLIN)
 
+        # Wait for a response
         while True:
             socks = dict(poll.poll(GLOBAL_TIMEOUT))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_multipart()
                 assert len(reply) >= 3
-                replies.append(reply)
+                return reply  # Return the complete reply when received
 
-        return replies
+    def handle_command(self, command):
+        if command == 'list':
+            reply = self.request("LIST")
+            if reply and reply[0][2] == b"OK":
+                file_list = reply[0][3].decode().split("\n")
+                print("Files available for download:")
+                for i, file_name in enumerate(file_list):
+                    print(f"{i}. {file_name}")
+            else:
+                print("Error: Unable to retrieve the file list from the server.")
+
+        elif command == 'download':
+            file_name = input("Enter file name to download: ").strip()
+            reply = self.request(f"GET {file_name}")
+            if reply and reply[0][2] == b"OK":
+                file_content = reply[0][3]
+                local_file_path = f"./{file_name}"
+                with open(local_file_path, 'wb') as f:
+                    f.write(file_content)
+                print(f"File '{file_name}' has been downloaded and saved as '{local_file_path}'")
+            else:
+                print(f"Error: {reply[0][3].decode()}")
+
+        elif command == 'exit':
+            print("Exiting the client.")
+            return False  # Returning False will exit the loop
+
+        else:
+            print("Invalid command. Use list, download, or exit.")
+        return True
 
 
 def main():
@@ -65,37 +95,17 @@ def main():
         print("Error: Could not connect to any endpoint.")
         sys.exit(1)
 
-    # Now list available commands
-    print("\nAvailable commands:")
-    print("1. --list  -> List available files")
-    print("2. --download <file_name> -> Download a file")
+    # Now continuously ask for commands until the user exits
+    while True:
+        print("\nAvailable commands:")
+        print("1. list  -> List available files")
+        print("2. download <file_name> -> Download a file")
+        print("3. exit  -> Exit the client")
 
-    command = input("\nEnter command: ").strip().lower()
+        command = input("\nEnter command: ").strip().lower()
 
-    if command == 'list' or command == '--list':
-        reply = client.request("LIST")
-        if reply and reply[0][2] == b"OK":
-            file_list = reply[0][3].decode().split("\n")
-            print("Files available for download:")
-            for i, file_name in enumerate(file_list):
-                print(f"{i}. {file_name}")
-        else:
-            print("Error: Unable to retrieve the file list from the server.")
-    
-    elif command.startswith('download') or command == '--download':
-        file_name = input("Enter file name to download: ").strip()
-        reply = client.request(f"GET {file_name}")
-        if reply and reply[0][2] == b"OK":
-            file_content = reply[0][3]
-            local_file_path = f"./{file_name}"
-            with open(local_file_path, 'wb') as f:
-                f.write(file_content)
-            print(f"File '{file_name}' has been downloaded and saved as '{local_file_path}'")
-        else:
-            print(f"Error: {reply[0][3].decode()}")
-    
-    else:
-        print("Invalid command. Use --list or --download.")
+        if not client.handle_command(command):
+            break  # Exit the loop if the user enters 'exit'
 
     client.destroy()
 
