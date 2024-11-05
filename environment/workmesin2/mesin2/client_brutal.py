@@ -22,7 +22,6 @@ class FLClient(object):
         print(f"I: Connected to {endpoint}")
 
     def request(self, *request):
-        # Prefix request with sequence number and empty envelope
         self.sequence += 1
         msg = [b'', str(self.sequence).encode()] + [r.encode() for r in request]
 
@@ -51,7 +50,7 @@ class FLClient(object):
         if command == 'list':
             reply = self.request("LIST")
             if reply and len(reply) >= 4 and reply[2] == b"OK":
-                file_list = reply[3].decode().split("\n")  # Corrected index to 3
+                file_list = reply[3].decode().split("\n") 
 
                 print("Files available for download:")
                 for i, file_name in enumerate(file_list):
@@ -63,7 +62,7 @@ class FLClient(object):
             file_name = input("Enter file name to download: ").strip()
             reply = self.request(f"GET {file_name}")
             if reply and len(reply) >= 4 and reply[2] == b"OK":
-                file_content = reply[3]  # Corrected index to 3
+                file_content = reply[3]
                 local_file_path = f"./{file_name}"
                 with open(local_file_path, 'wb') as f:
                     f.write(file_content)
@@ -73,7 +72,7 @@ class FLClient(object):
 
         elif command == 'exit':
             print("Exiting the client.")
-            return False  # Returning False will exit the loop
+            return False 
 
         else:
             print("Invalid command. Use list, download, or exit.")
@@ -81,7 +80,6 @@ class FLClient(object):
 
 
 def main():
-    # Update the check to allow both single and multiple endpoints
     if len(sys.argv) < 2:
         print("Usage: python client_brutal.py <endpoint1> [<endpoint2> ...]")
         sys.exit(0)
@@ -101,7 +99,6 @@ def main():
         print("Error: Could not connect to any endpoint.")
         sys.exit(1)
 
-    # Now continuously ask for commands until the user exits
     while True:
         print("\nAvailable commands:")
         print("1. list  -> List available files")
@@ -111,7 +108,7 @@ def main():
         command = input("\nEnter command: ").strip().lower()
 
         if not client.handle_command(command):
-            break  # Exit the loop if the user enters 'exit'
+            break
 
     client.destroy()
 
