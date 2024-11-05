@@ -78,19 +78,20 @@ class FLClient(object):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python client_brutal.py <endpoint1> <endpoint2> ...")
+    # Update the check to allow both single and multiple endpoints
+    if len(sys.argv) < 2:
+        print("Usage: python client_brutal.py <endpoint1> [<endpoint2> ...]")
         sys.exit(0)
 
     endpoints = sys.argv[1:]
     client = FLClient()
 
-    # Try to connect to each endpoint, and once connected to one, stop trying the others
+    # Try to connect to the first available endpoint
     connected = False
     for endpoint in endpoints:
         try:
             client.connect(endpoint)
-            print(f"Connected to {endpoint}")
+            print(f"Successfully connected to {endpoint}")
             connected = True
             break  # Stop after the first successful connection
         except Exception as e:
