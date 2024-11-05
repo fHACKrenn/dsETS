@@ -7,7 +7,7 @@ if len(sys.argv) < 2:
     print("Usage: python server_brutal.py tcp://*:<port>")
     sys.exit(1)
 
-endpoint = sys.argv[1]  # Expect the full endpoint like tcp://*:6666
+endpoint = sys.argv[1]
 files_directory = "/home/jovyan/work/mesin1/files/"
 
 # Initialize ZMQ server
