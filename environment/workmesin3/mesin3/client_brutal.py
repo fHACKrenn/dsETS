@@ -40,18 +40,39 @@ class FLClient(object):
 
         return replies
 
+
 def main():
     if len(sys.argv) < 3:
-        print("Usage: client.py <endpoint> <command> [<file_name>]")
+        print("Usage: python client_brutal.py <endpoint1> <endpoint2> ...")
         sys.exit(0)
 
-    endpoint = sys.argv[1]
-    command = sys.argv[2].upper()
-
+    endpoints = sys.argv[1:]
     client = FLClient()
-    client.connect(endpoint)
 
-    if command == '--list':
+    # Try to connect to each endpoint, and once connected to one, stop trying the others
+    connected = False
+    for endpoint in endpoints:
+        try:
+            client.connect(endpoint)
+            print(f"Connected to {endpoint}")
+            connected = True
+            break  # Stop after the first successful connection
+        except Exception as e:
+            print(f"Error connecting to {endpoint}: {e}")
+            continue
+
+    if not connected:
+        print("Error: Could not connect to any endpoint.")
+        sys.exit(1)
+
+    # Now list available commands
+    print("\nAvailable commands:")
+    print("1. --list  -> List available files")
+    print("2. --download <file_name> -> Download a file")
+
+    command = input("\nEnter command: ").strip().lower()
+
+    if command == 'list' or command == '--list':
         reply = client.request("LIST")
         if reply and reply[0][2] == b"OK":
             file_list = reply[0][3].decode().split("\n")
@@ -61,12 +82,8 @@ def main():
         else:
             print("Error: Unable to retrieve the file list from the server.")
     
-    elif command == '--download':
-        if len(sys.argv) < 4:
-            print("Error: File name required for download.")
-            sys.exit(1)
-
-        file_name = sys.argv[3]
+    elif command.startswith('download') or command == '--download':
+        file_name = input("Enter file name to download: ").strip()
         reply = client.request(f"GET {file_name}")
         if reply and reply[0][2] == b"OK":
             file_content = reply[0][3]
@@ -81,6 +98,7 @@ def main():
         print("Invalid command. Use --list or --download.")
 
     client.destroy()
+
 
 if __name__ == "__main__":
     main()
