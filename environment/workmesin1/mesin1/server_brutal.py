@@ -1,7 +1,14 @@
 import os
 import zmq
+import sys
 
-endpoint = "tcp://*:6666"
+# Check if port is passed as an argument
+if len(sys.argv) < 2:
+    print("Usage: python server_brutal.py <port>")
+    sys.exit(1)
+
+port = sys.argv[1]
+endpoint = f"tcp://*:{port}"
 files_directory = "/home/jovyan/work/mesin1/files/"
 
 # Initialize ZMQ server
