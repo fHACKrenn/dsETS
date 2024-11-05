@@ -1,7 +1,8 @@
 import sys
 import zmq
+import time
 
-GLOBAL_TIMEOUT = 2500  # ms
+GLOBAL_TIMEOUT = 2500  # Timeout for polling in milliseconds
 
 class FLClient(object):
     def __init__(self):
@@ -21,39 +22,42 @@ class FLClient(object):
         print(f"I: Connected to {endpoint}")
 
     def request(self, *request):
+        # Prefix request with sequence number and empty envelope
         self.sequence += 1
         msg = [b'', str(self.sequence).encode()] + [r.encode() for r in request]
 
-        # Send the request
-        self.socket.send_multipart(msg)
+        # Send the request to all connected servers
+        for _ in range(self.servers):
+            self.socket.send_multipart(msg)
 
-        # Poll for a reply
+        # Poll for a reply from any of the endpoints
         poll = zmq.Poller()
         poll.register(self.socket, zmq.POLLIN)
 
-        # Wait for a response
-        while True:
-            socks = dict(poll.poll(GLOBAL_TIMEOUT))
+        reply = None
+        endtime = time.time() + GLOBAL_TIMEOUT / 1000.0
+
+        while time.time() < endtime:
+            socks = dict(poll.poll((endtime - time.time()) * 1000))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_multipart()
-
                 if len(reply) >= 3:
                     return reply
-                else:
-                    print("Error: Invalid response format from the server.")
-                    return []
+
+        print("Error: No response received within the timeout.")
+        return []
 
     def handle_command(self, command):
         if command == 'list':
             reply = self.request("LIST")
             if reply and len(reply) >= 4 and reply[2] == b"OK":
                 file_list = reply[3].decode().split("\n")  # Corrected index to 3
+
                 print("Files available for download:")
                 for i, file_name in enumerate(file_list):
                     print(f"{i}. {file_name}")
             else:
                 print("Error: Unable to retrieve the file list from the server.")
-
 
         elif command == 'download':
             file_name = input("Enter file name to download: ").strip()
@@ -67,7 +71,6 @@ class FLClient(object):
             else:
                 print(f"Error: {reply[3].decode()}")
 
-
         elif command == 'exit':
             print("Exiting the client.")
             return False  # Returning False will exit the loop
@@ -78,26 +81,23 @@ class FLClient(object):
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python client_brutal.py <endpoint1> <endpoint2> ...")
+    # Update the check to allow both single and multiple endpoints
+    if len(sys.argv) < 2:
+        print("Usage: python client_brutal.py <endpoint1> [<endpoint2> ...]")
         sys.exit(0)
 
     endpoints = sys.argv[1:]
     client = FLClient()
 
-    # Try to connect to each endpoint, and once connected to one, stop trying the others
+    # Try to connect to all endpoints
     connected = False
     for endpoint in endpoints:
         try:
             client.connect(endpoint)
-            print(f"Connected to {endpoint}")
-            connected = True
-            break  # Stop after the first successful connection
         except Exception as e:
             print(f"Error connecting to {endpoint}: {e}")
-            continue
 
-    if not connected:
+    if client.servers == 0:
         print("Error: Could not connect to any endpoint.")
         sys.exit(1)
 
