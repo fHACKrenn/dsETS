@@ -36,31 +36,37 @@ class FLClient(object):
             socks = dict(poll.poll(GLOBAL_TIMEOUT))
             if socks.get(self.socket) == zmq.POLLIN:
                 reply = self.socket.recv_multipart()
-                assert len(reply) >= 3
-                return reply  # Return the complete reply when received
+
+                if len(reply) >= 3:
+                    return reply
+                else:
+                    print("Error: Invalid response format from the server.")
+                    return []
 
     def handle_command(self, command):
         if command == 'list':
             reply = self.request("LIST")
-            if reply and reply[0][2] == b"OK":
-                file_list = reply[0][3].decode().split("\n")
+            if reply and len(reply) >= 4 and reply[2] == b"OK":
+                file_list = reply[3].decode().split("\n")  # Corrected index to 3
                 print("Files available for download:")
                 for i, file_name in enumerate(file_list):
                     print(f"{i}. {file_name}")
             else:
                 print("Error: Unable to retrieve the file list from the server.")
 
+
         elif command == 'download':
             file_name = input("Enter file name to download: ").strip()
             reply = self.request(f"GET {file_name}")
-            if reply and reply[0][2] == b"OK":
-                file_content = reply[0][3]
+            if reply and len(reply) >= 4 and reply[2] == b"OK":
+                file_content = reply[3]  # Corrected index to 3
                 local_file_path = f"./{file_name}"
                 with open(local_file_path, 'wb') as f:
                     f.write(file_content)
                 print(f"File '{file_name}' has been downloaded and saved as '{local_file_path}'")
             else:
-                print(f"Error: {reply[0][3].decode()}")
+                print(f"Error: {reply[3].decode()}")
+
 
         elif command == 'exit':
             print("Exiting the client.")

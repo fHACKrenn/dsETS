@@ -8,7 +8,7 @@ if len(sys.argv) < 2:
     sys.exit(1)
 
 endpoint = sys.argv[1]  # Expect the full endpoint like tcp://*:6666
-files_directory = "/home/jovyan/work/mesin1/files/"
+files_directory = "/home/jovyan/work/mesin3/files/"
 
 # Initialize ZMQ server
 context = zmq.Context()
