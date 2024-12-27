@@ -4,7 +4,7 @@ from os import listdir
 from os.path import isfile, join
 
 HOSTNAME = "mesin2"
-FILEPATH = "/home/jovyan/work/mesin1/files"
+FILEPATH = "/home/jovyan/work/mesin2/files"
 NEWLINE = "\n"
 
 ERRN = "ERRN".encode("utf-8")
